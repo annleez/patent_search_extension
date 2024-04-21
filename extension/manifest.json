@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Patent Search Tool",
+  "description": "Helps disambiguate acronyms in your patent search query.",
+  "version": "1.0",
+  "content_scripts": [
+    {
+      "js": ["scripts/content.js"],
+      "matches": [
+        "https://patents.google.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_icon": "images/logo.png",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*"
+  ]
+}
