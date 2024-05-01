@@ -16,32 +16,43 @@ def disambiguate(query, use_zeroshot=True):
     json_string = result.content.decode('utf-8')
     result_dict = json.loads(json_string)
     predictions = result_dict['acronym_predictions']
+    tokens = result_dict['tokens']
     if not predictions:
         return None
     else:
         predictions = predictions.values()
 
+    print("tokens:", tokens)
     mapping_dict = {}
-    print("query:",query)
+    # print("query:",query)
+    x = 0
 
-    print("predictions:", predictions)
+    # print("predictions:", predictions)
     for prediction in predictions:
         top3 = [] # or less than 3, if less than 3 unique candidates
         i = 0
+        print("PREDICTION:", prediction)
+        print("TOKEN:", tokens[x])
+        
+        if 'zeroshot' not in prediction[1]:
+            mapping_dict[tokens[x]] = None
 
-        # top_definition = prediction[1]['zeroshot'][0]
-        # print("top definition:", top_definition)
-        definitions = prediction[1]['zeroshot'][1]
-        definitions = [item[0].lower() for item in definitions] # just words, not probability
+        else:
+            # top_definition = prediction[1]['zeroshot'][0]
+            # print("top definition:", top_definition)
+            definitions = prediction[1]['zeroshot'][1]
+            definitions = [item[0].lower() for item in definitions] # just words, not probability
 
-        # top 3 unique disambiguations
-        while len(top3) < 3 and i < len(definitions):
-            if definitions[i] not in top3:
-                top3.append(definitions[i])
-            i += 1
+            # top 3 unique disambiguations
+            while len(top3) < 3 and i < len(definitions):
+                if definitions[i] not in top3:
+                    top3.append(definitions[i])
+                i += 1
+            # mapping_dict[tokens[x]] = top3
+            acronym = reverse_dict[top3[0]][0]
+            mapping_dict[acronym] = top3
 
-        acronym = reverse_dict[top3[0]][0]
-        mapping_dict[acronym] = top3
+        x += 1
 
     return mapping_dict
 
@@ -82,9 +93,10 @@ def modify_query():
         query_changed = True
         for i in range(len(words)):
             if words[i] != "AND" and words[i] != "OR": # don't treat and/or as acronyms
-                if words[i] in mapping and mapping[words[i]][0] not in query.lower(): # not already disambiguated in current query
-                    alt_words[i] = [words[i], mapping[words[i]]]
-                    words[i] = "(" + words[i] + " OR " + mapping[words[i]][0] + ")"
+                if words[i] in mapping:
+                    if mapping[words[i]] and mapping[words[i]][0] not in query.lower(): # not already disambiguated in current query
+                        alt_words[i] = [words[i], mapping[words[i]]]
+                        words[i] = "(" + words[i] + " OR " + mapping[words[i]][0] + ")"
 
         query = "".join(words)
     
